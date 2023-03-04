@@ -208,7 +208,7 @@ void PR_StackTrace (void)
 			Con_Printf ("<NO FUNCTION>\n");
 		}
 		else
-			Con_Printf ("%12s : %s\n", pr_strings + f->s_file, pr_strings + f->s_name);		
+			Con_Printf ("%12s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));		
 	}
 }
 
@@ -243,7 +243,7 @@ void PR_Profile_f (void)
 		if (best)
 		{
 			if (num < 10)
-				Con_Printf ("%7i %s\n", best->profile, pr_strings+best->s_name);
+				Con_Printf ("%7i %s\n", best->profile, PR_GetString(best->s_name));
 			num++;
 			best->profile = 0;
 		}
@@ -380,7 +380,7 @@ void PR_ExecuteProgram (func_t fnum)
 	f = &pr_functions[fnum];
 
 	runaway = 100000;
-	pr_trace = true;
+	pr_trace = false;
 
 // make a stack frame
 	exitdepth = pr_depth;
@@ -483,7 +483,7 @@ while (1)
 		c->_float = !a->vector[0] && !a->vector[1] && !a->vector[2];
 		break;
 	case OP_NOT_S:
-		c->_float = !a->string || !pr_strings[a->string];
+		c->_float = !a->string || !*PR_GetString(a->string);
 		break;
 	case OP_NOT_FNC:
 		c->_float = !a->function;
@@ -502,12 +502,12 @@ while (1)
 		break;
 	case OP_EQ_S:
 		/* doing strcmp */
+		/*
 		printf("\nSTRCMP\n");
-		printf("pr_strings: %p\n", pr_strings);
 		printf("ptr_a: %d\n", a->string);
 		printf("ptr_b: %d\n", b->string);
-		char *stra = pr_strings+a->string;
-		char *strb = pr_strings+b->string;
+		char *stra = PR_GetString(a->string);
+		char *strb = PR_GetString(b->string);
 		#define print_str(x) \
 			printf("String: "); \
 			for (int i = 0; i < 16; i++) printf("%02x ", x[i]); \
@@ -516,8 +516,8 @@ while (1)
 		printf("%s\n",strb);
 		print_str(stra);
 		print_str(strb);
-		
-		c->_float = !strcmp(pr_strings+a->string,pr_strings+b->string);
+		*/
+		c->_float = !strcmp(PR_GetString(a->string), PR_GetString(b->string));
 		break;
 	case OP_EQ_E:
 		c->_float = a->_int == b->_int;
@@ -536,7 +536,7 @@ while (1)
 					(a->vector[2] != b->vector[2]);
 		break;
 	case OP_NE_S:
-		c->_float = strcmp(pr_strings+a->string,pr_strings+b->string);
+		c->_float = strcmp(PR_GetString(a->string), PR_GetString(b->string));
 		break;
 	case OP_NE_E:
 		c->_float = a->_int != b->_int;
