@@ -1,2 +1,4 @@
 *.o
 id1/*
+./source/id1
+./.vscode

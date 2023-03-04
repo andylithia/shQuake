@@ -39,6 +39,12 @@ SDL_Surface* semu;
 SDL_Surface* sscr;
 uint8_t SDL_done;
 
+
+static qboolean mouse_avail;
+static float   mouse_x, mouse_y;
+static int mouse_oldbuttonstate = 0;
+
+
 SDL_Rect rsrc = {
     .x=0,
     .y=0,
@@ -446,6 +452,20 @@ void Sys_SendKeyEvents (void)
                 Key_Event(sym, state);
                 break;
 
+			case SDL_MOUSEMOTION:
+                if ( (event.motion.x != (vid.width/2)) ||
+                     (event.motion.y != (vid.height/2)) ) {
+                    mouse_x = event.motion.xrel*10;
+                    mouse_y = event.motion.yrel*10;
+                    if ( (event.motion.x < ((vid.width/2)-(vid.width/4))) ||
+                         (event.motion.x > ((vid.width/2)+(vid.width/4))) ||
+                         (event.motion.y < ((vid.height/2)-(vid.height/4))) ||
+                         (event.motion.y > ((vid.height/2)+(vid.height/4))) ) {
+                        SDL_WarpMouse(vid.width/2, vid.height/2);
+                    }
+                }
+                break;
+
             case SDL_QUIT:
                 CL_Disconnect ();
                 Host_ShutdownServer(false);        
@@ -458,6 +478,71 @@ void Sys_SendKeyEvents (void)
 }
 
 
+void IN_Init (void)
+{
+    if ( COM_CheckParm ("-nomouse") )
+        return;
+    mouse_x = mouse_y = 0.0;
+    mouse_avail = 1;
+}
+
+void IN_Shutdown (void)
+{
+    mouse_avail = 0;
+}
+
+void IN_Commands (void)
+{
+    int i;
+    int mouse_buttonstate;
+   
+    if (!mouse_avail) return;
+   
+    i = SDL_GetMouseState(NULL, NULL);
+    /* Quake swaps the second and third buttons */
+    mouse_buttonstate = (i & ~0x06) | ((i & 0x02)<<1) | ((i & 0x04)>>1);
+    for (i=0 ; i<3 ; i++) {
+        if ( (mouse_buttonstate & (1<<i)) && !(mouse_oldbuttonstate & (1<<i)) )
+            Key_Event (K_MOUSE1 + i, true);
+
+        if ( !(mouse_buttonstate & (1<<i)) && (mouse_oldbuttonstate & (1<<i)) )
+            Key_Event (K_MOUSE1 + i, false);
+    }
+    mouse_oldbuttonstate = mouse_buttonstate;
+}
+
+void IN_Move (usercmd_t *cmd)
+{
+    if (!mouse_avail)
+        return;
+   
+    mouse_x *= sensitivity.value;
+    mouse_y *= sensitivity.value;
+   
+    if ( (in_strafe.state & 1) || (lookstrafe.value && (in_mlook.state & 1) ))
+        cmd->sidemove += m_side.value * mouse_x;
+    else
+        cl.viewangles[YAW] -= m_yaw.value * mouse_x;
+    if (in_mlook.state & 1)
+        V_StopPitchDrift ();
+   
+    if ( (in_mlook.state & 1) && !(in_strafe.state & 1)) {
+        cl.viewangles[PITCH] += m_pitch.value * mouse_y;
+        if (cl.viewangles[PITCH] > 80)
+            cl.viewangles[PITCH] = 80;
+        if (cl.viewangles[PITCH] < -70)
+            cl.viewangles[PITCH] = -70;
+    } else {
+        if ((in_strafe.state & 1) && noclip_anglehack)
+            cmd->upmove -= m_forward.value * mouse_y;
+        else
+            cmd->forwardmove -= m_forward.value * mouse_y;
+    }
+    mouse_x = mouse_y = 0.0;
+}
+
+
+
 void Sys_HighFPPrecision (void)
 {
 }
@@ -466,11 +551,6 @@ void Sys_LowFPPrecision (void)
 {
 }
 
-
-void Sys_NSpireInput( void )
-{
-	int i_idx;
-}
 
 //=============================================================================
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
