@@ -1,8 +1,8 @@
 DEBUG = FALSE
 
-GCC ?= gcc
-GXX ?= g++
-GCCFLAGS = -O1 -g3 -Wall -I/usr/include/SDL -fomit-frame-pointer
+GCC ?= aarch64-linux-gcc
+GXX ?= aarch64-linux-g++
+GCCFLAGS = -O3 -W -I/usr/include/SDL 
 LDFLAGS = -lSDL -lm 
 
 # Disable Assembly Routines

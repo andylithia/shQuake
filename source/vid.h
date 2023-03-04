@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
+#define	BASEWIDTH	320
+#define	BASEHEIGHT	240
+
 // a pixel can be one, two, or four bytes
 typedef byte pixel_t;
 

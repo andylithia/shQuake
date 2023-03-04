@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-
+#define PARANOID
 /*
 
 */
@@ -380,7 +380,7 @@ void PR_ExecuteProgram (func_t fnum)
 	f = &pr_functions[fnum];
 
 	runaway = 100000;
-	pr_trace = false;
+	pr_trace = true;
 
 // make a stack frame
 	exitdepth = pr_depth;
@@ -501,6 +501,22 @@ while (1)
 					(a->vector[2] == b->vector[2]);
 		break;
 	case OP_EQ_S:
+		/* doing strcmp */
+		printf("\nSTRCMP\n");
+		printf("pr_strings: %p\n", pr_strings);
+		printf("ptr_a: %d\n", a->string);
+		printf("ptr_b: %d\n", b->string);
+		char *stra = pr_strings+a->string;
+		char *strb = pr_strings+b->string;
+		#define print_str(x) \
+			printf("String: "); \
+			for (int i = 0; i < 16; i++) printf("%02x ", x[i]); \
+			printf("\n");
+		printf("%s\n",stra);
+		printf("%s\n",strb);
+		print_str(stra);
+		print_str(strb);
+		
 		c->_float = !strcmp(pr_strings+a->string,pr_strings+b->string);
 		break;
 	case OP_EQ_E:
@@ -577,8 +593,10 @@ while (1)
 #ifdef PARANOID
 		NUM_FOR_EDICT(ed);		// make sure it's in range
 #endif
-		a = (eval_t *)((int *)&ed->v + b->_int);
-		c->_int = a->_int;
+		c->_int = ((eval_t *)((int *)&ed->v + b->_int))->_int;
+		if (st->c == 3789) {
+			printf("GVAR 3789 %d %d %d\n", a->_int, b->_int, c->_int);
+		}
 		break;
 
 	case OP_LOAD_V:

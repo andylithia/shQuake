@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	LINUX_VERSION		1.30
 #define	X11_VERSION			1.10
 
-//define	PARANOID			// speed sapping error checking
+//#define	PARANOID			// speed sapping error checking
 
 #ifdef QUAKE2
 #define	GAMENAME	"id1"		// directory to look in by default
@@ -71,6 +71,7 @@ double atof( const char *str );
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <stdint.h>
 #endif
 
 #include "nspire_math.h"

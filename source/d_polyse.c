@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "r_local.h"
 #include "d_local.h"
 
-#define NSPIRE_POLYSET_DRAWSPANS 1
+#define NSPIRE_POLYSET_DRAWSPANS 0
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
@@ -131,7 +131,7 @@ void D_PolysetDraw (void)
 						// one extra because of cache line pretouching
 
 	a_spans = (spanpackage_t *)
-			(((long)&spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+			(((uintptr_t)&spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 
 	if (r_affinetridesc.drawtype)
 	{

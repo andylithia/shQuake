@@ -87,7 +87,7 @@ float		aliasxscale, aliasyscale, aliasxcenter, aliasycenter;
 fixed16_t f16_xscale, f16_yscale, f16_xcenter, f16_ycenter;
 #endif
 
-int		screenwidth;
+// int		screenwidth;
 
 float	pixelAspect;
 float	screenAspect;
@@ -933,13 +933,13 @@ void R_EdgeDrawing_ (void)
 	else
 	{
 		r_edges =  (edge_t *)
-				(((long)&ledges[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+				(((uintptr_t)&ledges[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	}
 
 	if (r_surfsonstack)
 	{
 		surfaces =  (surf_t *)
-				(((long)&lsurfs[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+				(((uintptr_t)&lsurfs[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 		surf_max = &surfaces[r_cnumsurfs];
 	// surface 0 doesn't really exist; it's just a dummy because index 0
 	// is used to indicate no edge attached to surface
@@ -1127,10 +1127,10 @@ void R_RenderView (void)
 	if ( Hunk_LowMark() & 3 )
 		Sys_Error ("Hunk is missaligned");
 
-	if ( (long)(&dummy) & 3 )
+	if ( (uintptr_t)(&dummy) & 3 )
 		Sys_Error ("Stack is missaligned");
 
-	if ( (long)(&r_warpbuffer) & 3 )
+	if ( (uintptr_t)(&r_warpbuffer) & 3 )
 		Sys_Error ("Globals are missaligned");
 
 	/*printf("R_RenderView %s:%d\n", __FILE__, __LINE__ );*/

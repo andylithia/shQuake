@@ -972,7 +972,7 @@ void ED_LoadFromFile (char *data)
 			ED_Free (ent);
 			continue;
 		}
-		/*printf("%s %s:%d cname %d\n", __FUNCTION__, __FILE__, __LINE__, ent->v.classname );*/
+		/* printf("%s %s:%d cname %d\n", __FUNCTION__, __FILE__, __LINE__, ent->v.classname ); */
 
 	// look for the spawn function
 		func = ED_FindFunction ( pr_strings + ent->v.classname );
@@ -1089,8 +1089,9 @@ void PR_LoadProgs (void)
 	}
 
 	/*printf( "%s %s:%d\n", __FUNCTION__, __FILE__, __LINE__ );*/
-	for (i=0 ; i<progs->numglobals ; i++)
+	for (i=0 ; i<progs->numglobals ; i++){
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
+	}
 }
 
 

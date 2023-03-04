@@ -18,25 +18,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 // vid_null.c -- null video driver to aid porting efforts
-
-#ifndef WIN32
-#include "os.h"
-#endif
-
 #include "quakedef.h"
 #include "d_local.h"
+#include "SDL.h"
+// viddef_t	vid;				// global video state
 
-viddef_t	vid;				// global video state
 
-#define	BASEWIDTH	320
-#define	BASEHEIGHT	240
+// byte	vid_buffer[BASEWIDTH*BASEHEIGHT];
+extern uint8_t SDL_done;
+extern SDL_Surface* semu;
+extern SDL_Surface* sscr;
 
-byte	vid_buffer[BASEWIDTH*BASEHEIGHT];
 short	zbuffer[BASEWIDTH*BASEHEIGHT];
 byte	surfcache[SURFCACHE_SIZE_AT_320X200];
 
 unsigned short	d_8to16table[256];
-unsigned	d_8to24table[256];
+unsigned	    d_8to24table[256];
 
 
 unsigned char rgui8_palette[ 256 ][ 3 ];
@@ -56,14 +53,22 @@ void VID_UpdatePalette( )
 
 void	VID_SetPalette (unsigned char *palette)
 {
-	memcpy( rgui8_palette, palette, 256 * 3 * sizeof( unsigned char ) );
-	VID_UpdatePalette();
+	int i;
+    SDL_Color colors[256];
+
+    for ( i=0; i<256; ++i )
+    {
+        colors[i].r = *palette++;
+        colors[i].g = *palette++;
+        colors[i].b = *palette++;
+    }
+    SDL_SetColors(semu, colors, 0, 256);
+    SDL_SetColors(sscr, colors, 0, 256);
 }
 
 void	VID_ShiftPalette (unsigned char *palette)
 {
-	memcpy( rgui8_palette, palette, 256 * 3 * sizeof( unsigned char ) );
-	VID_UpdatePalette();
+	VID_SetPalette(palette);
 }
 
 void	VID_Init (unsigned char *palette)
@@ -79,97 +84,24 @@ void	VID_Init (unsigned char *palette)
 	memcpy( aligned_colormap, host_colormap, 0x4000 );
 	vid.colormap = aligned_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-	vid.buffer = vid.conbuffer = vid_buffer;
+	vid.buffer = vid.conbuffer = semu->pixels;
 	vid.rowbytes = vid.conrowbytes = BASEWIDTH;
 	
 	d_pzbuffer = zbuffer;
 	D_InitCaches (surfcache, sizeof(surfcache));
 
-	memcpy( rgui8_palette, palette, 256 * 3 * sizeof( unsigned char ) );
 	VID_UpdatePalette();
+    SDL_ShowCursor(0);
 }
 
 void	VID_Shutdown (void)
 {
+	printf("VID_shutdown\n");
+	SDL_Quit();
 }
 
 void	VID_Update (vrect_t *rects)
 {
-#ifdef FORNSPIRE
-	int i_x, i_y, i_width, i_line_left;
-	unsigned short *ptr = (*(void**)0xC0000010);
-
-	i_width = SCREEN_WIDTH;
-	for( i_y = rects->y; i_y < rects->y+rects->height; i_y++ )
-	{
-		if( rects->x == 0 )
-		{
-			unsigned char *pui8_line;
-			unsigned int *pui_dst, ui_pelpair;
-			unsigned short *pui16_rem;
-			int i_pel, i_pel2;
-
-			i_line_left = rects->width;
-			pui8_line = &vid_buffer[ i_y * BASEWIDTH ];
-			pui_dst = &ptr[ i_y * i_width ];
-			while( i_line_left >= 16 )
-			{
-				i_pel = pui8_line[ 0 ];
-				i_pel2 = pui8_line[ 1 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 0 ] = ui_pelpair;
-				i_pel = pui8_line[ 2 ];
-				i_pel2 = pui8_line[ 3 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 1 ] = ui_pelpair;
-				i_pel = pui8_line[ 4 ];
-				i_pel2 = pui8_line[ 5 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 2 ] = ui_pelpair;
-				i_pel = pui8_line[ 6 ];
-				i_pel2 = pui8_line[ 7 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 3 ] = ui_pelpair;
-				i_pel = pui8_line[ 8 ];
-				i_pel2 = pui8_line[ 9 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 4 ] = ui_pelpair;
-				i_pel = pui8_line[ 10 ];
-				i_pel2 = pui8_line[ 11 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 5 ] = ui_pelpair;
-				i_pel = pui8_line[ 12 ];
-				i_pel2 = pui8_line[ 13 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 6 ] = ui_pelpair;
-				i_pel = pui8_line[ 14 ];
-				i_pel2 = pui8_line[ 15 ];
-				ui_pelpair = rgui16_palette[ i_pel ] | ( rgui16_palette[ i_pel2 ] << 16 );
-				pui_dst[ 7 ] = ui_pelpair;
-				i_line_left -= 16;
-				pui_dst += 8;
-				pui8_line += 16;
-			}
-			pui16_rem = ( unsigned short *)pui_dst;
-			while( i_line_left-- > 0 )
-			{
-				i_pel = *(pui8_line++);
-				*(pui16_rem++) = rgui16_palette[ i_pel ];
-			}
-		}
-		else
-		{
-			for( i_x = rects->x; i_x < rects->x+rects->width; i_x++ )
-			{
-				int i_pel = vid_buffer[ i_x + i_y * BASEWIDTH ];
-				ptr[ i_x + i_y * i_width ] = rgui16_palette[ i_pel ];
-			}
-		}
-	}
-#else
-	volatile int i_pel;
-	i_pel = 0;
-#endif
 }
 
 /*
